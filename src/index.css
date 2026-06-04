@@ -418,6 +418,43 @@ button {
   flex-shrink: 0;
 }
 
+.compass-sync-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-gray);
+  padding: 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.compass-sync-btn:hover {
+  color: var(--accent-blue);
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.compass-sync-btn.active {
+  color: var(--text-white);
+  background: var(--accent-blue-bg);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+/* Compass symbol rotation animation */
+.spinning-compass {
+  animation: compass-glow 2.5s infinite linear;
+}
+
+@keyframes compass-glow {
+  0% { transform: rotate(0deg); opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { transform: rotate(360deg); opacity: 0.8; }
+}
+
 /* Search Dropdown list */
 .search-suggestions-dropdown {
   position: absolute;

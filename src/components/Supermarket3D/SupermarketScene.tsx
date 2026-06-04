@@ -11,16 +11,19 @@ import { Rack3D } from './Rack3D';
 import { BillingCounter } from './BillingCounter';
 import { UserMarker } from './UserMarker';
 import { RouteLine } from './RouteLine';
+
 interface CameraControllerProps {
   focusedRackId: string | null;
   userPosition: { x: number; z: number };
   isNavigating: boolean;
+  compassHeading: number | null;
 }
 
 const CameraController: React.FC<CameraControllerProps> = ({
   focusedRackId,
   userPosition,
   isNavigating,
+  compassHeading,
 }) => {
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
@@ -78,13 +81,36 @@ const CameraController: React.FC<CameraControllerProps> = ({
   }, [focusedRackId, userPosition, isNavigating]);
 
   useFrame(() => {
-    // If user is actively interacting, stop auto-transition
+    // If user is actively interacting, stop auto-rotation/transition
     if (isUserInteracting.current) {
       isTransitioning.current = false;
       return;
     }
 
-    if (isTransitioning.current && controlsRef.current) {
+    if (compassHeading !== null && controlsRef.current) {
+      // Calculate current radius (distance in horizontal plane) and height relative to controls target
+      const target = controlsRef.current.target;
+      const dx = camera.position.x - target.x;
+      const dz = camera.position.z - target.z;
+      const radius = Math.sqrt(dx * dx + dz * dz);
+      const height = camera.position.y - target.y;
+
+      // Orbit camera position smoothly matching the device orientation angle
+      const currentAngle = Math.atan2(dx, dz);
+      const targetAngle = compassHeading;
+      
+      // Interpolate angle smoothly wrapping around circles
+      let diff = targetAngle - currentAngle;
+      diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+      const nextAngle = currentAngle + diff * 0.08; // smooth rotate speed
+
+      // Update camera position
+      camera.position.x = target.x + Math.sin(nextAngle) * radius;
+      camera.position.z = target.z + Math.cos(nextAngle) * radius;
+      camera.position.y = target.y + height;
+      
+      controlsRef.current.update();
+    } else if (isTransitioning.current && controlsRef.current) {
       // Lerp camera position
       camera.position.lerp(targetPos.current, 0.05);
 
@@ -128,6 +154,7 @@ interface SupermarketSceneProps {
   userPosition: { x: number; z: number };
   isNavigating: boolean;
   isSimulating?: boolean;
+  compassHeading: number | null;
   routePath: GraphNode[];
   onCheckoutClick?: () => void;
 }
@@ -140,6 +167,7 @@ export const SupermarketScene: React.FC<SupermarketSceneProps> = ({
   userPosition,
   isNavigating,
   isSimulating = false,
+  compassHeading,
   routePath,
   onCheckoutClick,
 }) => {
@@ -182,8 +210,10 @@ export const SupermarketScene: React.FC<SupermarketSceneProps> = ({
           focusedRackId={focusedRackId}
           userPosition={userPosition}
           isNavigating={isNavigating}
+          compassHeading={compassHeading}
         />
       </Canvas>
     </div>
   );
 };
+export default SupermarketScene;

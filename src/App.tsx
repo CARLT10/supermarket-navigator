@@ -36,6 +36,184 @@ export const App: React.FC = () => {
     currentPos: { x: ENTRANCE.x, z: ENTRANCE.z }
   });
 
+  // 5. Compass Orientation & Pedometer States
+  const [compassHeading, setCompassHeading] = useState<number | null>(null);
+  const [isCompassActive, setIsCompassActive] = useState(false);
+  const [stepCount, setStepCount] = useState(0);
+  const lastStepTime = useRef<number>(0);
+
+  // Sync state reference to avoid stale closures in browser event callbacks
+  const stateRef = useRef({
+    userPosition,
+    isNavigating,
+    routePath,
+    compassHeading,
+    selectedProduct,
+    isSimulating,
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      userPosition,
+      isNavigating,
+      routePath,
+      compassHeading,
+      selectedProduct,
+      isSimulating,
+    };
+  }, [userPosition, isNavigating, routePath, compassHeading, selectedProduct, isSimulating]);
+
+  // Handle a step detected by phone accelerometer sensor
+  const handlePhysicalStep = () => {
+    const { userPosition: currentPos, isNavigating: nav, routePath: path, compassHeading: heading, isSimulating: sim } = stateRef.current;
+    
+    // Ignore physical steps if walking simulation is already moving the character automatically
+    if (sim) return;
+
+    const stepLength = 0.55; // stride length in meters
+
+    if (nav && path.length >= 2) {
+      // 1. NAVIGATION MODE: Move avatar along the planned route line
+      const targetNode = path[1];
+      if (!targetNode) return;
+
+      const dx = targetNode.x - currentPos.x;
+      const dz = targetNode.z - currentPos.z;
+      const distToTarget = Math.sqrt(dx * dx + dz * dz);
+
+      if (distToTarget <= stepLength) {
+        // Arrive at next route node!
+        setUserPosition({ x: targetNode.x, z: targetNode.z });
+        setCurrentUserNode(targetNode);
+      } else {
+        // Move towards target node along the route segment
+        const angle = Math.atan2(dz, dx);
+        setUserPosition({
+          x: currentPos.x + Math.cos(angle) * stepLength,
+          z: currentPos.z + Math.sin(angle) * stepLength,
+        });
+      }
+    } else {
+      // 2. FREE ROAM MODE: Walk in the direction the phone is physically pointing
+      // If compass is synced, walk matching heading. Standard R3F camera North is Z-
+      const walkAngle = heading !== null ? heading : -Math.PI / 2;
+
+      // Note: in three.js scene, camera forward vector points towards negative Z
+      // When alpha = 0 (pointing North), character walks in negative Z direction
+      const moveX = Math.sin(walkAngle) * stepLength;
+      const moveZ = -Math.cos(walkAngle) * stepLength; // Z- is forward
+
+      const newX = Math.max(-7.0, Math.min(7.0, currentPos.x + moveX));
+      const newZ = Math.max(-5.5, Math.min(5.5, currentPos.z + moveZ));
+
+      setUserPosition({ x: newX, z: newZ });
+
+      // Find and snap to nearest graph node to keep userNode state updated
+      let nearestNode = GRAPH_NODES.entrance;
+      let minDist = Infinity;
+      Object.values(GRAPH_NODES).forEach((node) => {
+        const dist = Math.sqrt((newX - node.x) ** 2 + (newZ - node.z) ** 2);
+        if (dist < minDist) {
+          minDist = dist;
+          nearestNode = node;
+        }
+      });
+      setCurrentUserNode(nearestNode);
+    }
+  };
+
+  // Compass and Accelerometer Motion orientation listener
+  useEffect(() => {
+    if (!isCompassActive) {
+      setCompassHeading(null);
+      return;
+    }
+
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      // iOS webkitCompassHeading check (provides absolute magnetic compass heading, 0-360 deg)
+      let heading = (e as any).webkitCompassHeading;
+      
+      // Fallback to standard alpha (absolute if using deviceorientationabsolute)
+      if (heading === undefined || heading === null) {
+        heading = e.alpha;
+      }
+
+      if (heading !== null && heading !== undefined) {
+        const headingRad = (heading * Math.PI) / 180;
+        setCompassHeading(headingRad);
+      }
+    };
+
+    const handleMotion = (e: DeviceMotionEvent) => {
+      const acc = e.accelerationIncludingGravity;
+      if (!acc) return;
+      
+      const x = acc.x || 0;
+      const y = acc.y || 0;
+      const z = acc.z || 0;
+      
+      // Magnitude of force vector
+      const magnitude = Math.sqrt(x*x + y*y + z*z);
+      
+      const now = Date.now();
+      const threshold = 12.2; // step impact threshold in m/s^2 (gravity is ~9.8)
+      
+      if (magnitude > threshold && now - lastStepTime.current > 450) {
+        lastStepTime.current = now;
+        setStepCount((prev) => prev + 1);
+        handlePhysicalStep();
+      }
+    };
+
+    // Listen to standard and absolute orientation events plus accelerometer motion
+    window.addEventListener('deviceorientation', handleOrientation);
+    window.addEventListener('deviceorientationabsolute', handleOrientation);
+    window.addEventListener('devicemotion', handleMotion);
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation);
+      window.removeEventListener('deviceorientationabsolute', handleOrientation);
+      window.removeEventListener('devicemotion', handleMotion);
+    };
+  }, [isCompassActive]);
+
+  const handleSyncCompass = async () => {
+    if (isCompassActive) {
+      setIsCompassActive(false);
+      setCompassHeading(null);
+      return;
+    }
+
+    // Check if running on a secure origin (required by mobile browsers to access sensors)
+    const isSecureOrigin = typeof window !== 'undefined' && 
+      (window.location.protocol === 'https:' || 
+       window.location.hostname === 'localhost' || 
+       window.location.hostname === '127.0.0.1');
+
+    if (!isSecureOrigin) {
+      alert("Mobile web browsers restrict sensor access to secure (HTTPS) origins.\n\nPlease open the app via an HTTPS tunnel (e.g. npx ngrok http 5173) or enable insecure flags in your mobile browser.");
+    }
+
+    if (
+      typeof window !== 'undefined' &&
+      typeof (DeviceOrientationEvent as any).requestPermission === 'function'
+    ) {
+      try {
+        const response = await (DeviceOrientationEvent as any).requestPermission();
+        if (response === 'granted') {
+          setIsCompassActive(true);
+        } else {
+          alert('Device Orientation permission was denied.');
+        }
+      } catch (err) {
+        console.error('Compass sensor permission error:', err);
+        alert('Could not start compass sensor. Ensure you are accessing via HTTPS.');
+      }
+    } else {
+      setIsCompassActive(true);
+    }
+  };
+
   // Handle product click/search selection
   const handleSelectProduct = (product: Product) => {
     setSelectedProduct(product);
@@ -273,6 +451,31 @@ export const App: React.FC = () => {
     handleStopNavigation();
   };
 
+  // Dynamic Re-routing (Active Pathfinder)
+  useEffect(() => {
+    if (isNavigating && !isSimulating && selectedProduct) {
+      const frontAccessNodeId = `rack_${selectedProduct.rackId}_front`;
+      const rearAccessNodeId = `rack_${selectedProduct.rackId}_rear`;
+      const startNodeId = currentUserNode.id;
+
+      const frontRoute = findShortestPath(startNodeId, frontAccessNodeId);
+      const rearRoute = findShortestPath(startNodeId, rearAccessNodeId);
+
+      let selectedRoute = frontRoute;
+      if (rearRoute.path.length > 0 && (frontRoute.path.length === 0 || rearRoute.distance < frontRoute.distance)) {
+        selectedRoute = rearRoute;
+      }
+
+      if (selectedRoute.path.length > 0) {
+        setRoutePath(selectedRoute.path);
+        setRouteDistance(selectedRoute.distance);
+        const steps = generateDirections(selectedRoute.path, selectedProduct.name);
+        setInstructions(steps);
+        setCurrentSimIndex(0);
+      }
+    }
+  }, [currentUserNode, isNavigating, isSimulating, selectedProduct]);
+
   // Clean up timer on unmount
   useEffect(() => {
     return () => {
@@ -292,6 +495,7 @@ export const App: React.FC = () => {
           userPosition={userPosition}
           isNavigating={isNavigating}
           isSimulating={isSimulating}
+          compassHeading={compassHeading}
           routePath={routePath}
           onCheckoutClick={() => handleQuickNavigateShortcut('billing', 'Billing Register')}
         />
@@ -308,6 +512,8 @@ export const App: React.FC = () => {
               userNodeName={currentUserNode.name}
               activeCategoryName={activeCategoryName}
               onSelectCategory={handleSelectCategory}
+              isCompassActive={isCompassActive}
+              onSyncCompass={handleSyncCompass}
             />
           </div>
 
@@ -329,6 +535,8 @@ export const App: React.FC = () => {
             onToggleCart={handleToggleCart}
             onQuickNavigate={handleQuickNavigateShortcut}
             onFocusRack={handleFocusRackIn3D}
+            isCompassActive={isCompassActive}
+            stepCount={stepCount}
           />
         </div>
       </div>

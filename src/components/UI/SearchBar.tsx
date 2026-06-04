@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, MapPin } from 'lucide-react';
+import { Search, X, MapPin, Compass } from 'lucide-react';
 import { type Product } from '../../data/products';
 
 interface SearchBarProps {
@@ -10,6 +10,8 @@ interface SearchBarProps {
   userNodeName: string;
   activeCategoryName: string | null;
   onSelectCategory: (rackId: string | null, categoryName: string | null) => void;
+  isCompassActive?: boolean;
+  onSyncCompass?: () => void;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -20,6 +22,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   userNodeName,
   activeCategoryName,
   onSelectCategory,
+  isCompassActive = false,
+  onSyncCompass,
 }) => {
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Product[]>([]);
@@ -143,6 +147,24 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           <MapPin size={14} className="pin-icon" />
           <span>{userNodeName === 'Supermarket Entrance' ? 'Entrance' : userNodeName.replace(' Shelf Access', '').replace(' Aisle', '')}</span>
         </div>
+
+        {/* Compass sync button */}
+        {onSyncCompass && (
+          <>
+            <div className="search-divider" />
+            <button 
+              type="button"
+              className={`compass-sync-btn ${isCompassActive ? 'active' : ''}`} 
+              onClick={(e) => {
+                e.stopPropagation();
+                onSyncCompass();
+              }}
+              title="Sync Phone Compass"
+            >
+              <Compass size={16} className={isCompassActive ? 'spinning-compass' : ''} />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Auto suggestions dropdown list */}

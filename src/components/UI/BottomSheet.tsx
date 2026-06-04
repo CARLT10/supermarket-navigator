@@ -42,6 +42,9 @@ interface BottomSheetProps {
   // Quick navigation shortcuts
   onQuickNavigate: (targetId: string, label: string) => void;
   onFocusRack: (rackId: string) => void;
+
+  isCompassActive?: boolean;
+  stepCount?: number;
 }
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({
@@ -60,6 +63,8 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   onToggleCart,
   onQuickNavigate,
   onFocusRack,
+  isCompassActive = false,
+  stepCount = 0,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showCartOnly, setShowCartOnly] = useState(false);
@@ -272,6 +277,27 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
                 <div className="dashboard-header">
                   <h2>Supermarket Assistant</h2>
                   <p>Smart indoor pathfinder. Entrance position active.</p>
+                  
+                  {isCompassActive && (
+                    <div 
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        color: '#10b981',
+                        padding: '4px 8px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        marginTop: '8px',
+                        letterSpacing: '0.2px'
+                      }}
+                    >
+                      <span>🚶 Step Sensor Active: {stepCount} steps</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Shopping Cart Shortcut bar */}
