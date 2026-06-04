@@ -182,3 +182,40 @@
     border-right-color: var(--border);
   }
 }
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-status-chip {
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: #1f2937;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  max-width: min(90vw, 28rem);
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+  background: rgba(30, 41, 59, 0.95);
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+  text-align: center;
+  pointer-events: none;
+}
+```Use chat to tell me which framework you'd prefer.
