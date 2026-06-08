@@ -14,6 +14,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { type Product } from '../../data/products';
+import { PRODUCT_RECOMMENDATIONS } from '../../data/recommendations';
 import { type NavigationInstruction } from '../../utils/textDirections';
 
 interface BottomSheetProps {
@@ -71,6 +72,9 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
   // Cart operations
   const isInCart = selectedProduct ? cart.some((p) => p.id === selectedProduct.id) : false;
+  const recommendations = selectedProduct
+  ? PRODUCT_RECOMMENDATIONS[selectedProduct.name] || []
+  : [];
 
   // Directions mapping to icon
   const getDirectionIcon = (iconName: string) => {
@@ -191,6 +195,41 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             </div>
 
             <p className="product-description">{selectedProduct.description}</p>
+            {/* AI Product Recommendations */}
+{recommendations.length > 0 && (
+  <div
+    style={{
+      marginTop: '16px',
+      padding: '12px',
+      borderRadius: '12px',
+      background: 'rgba(59,130,246,0.08)',
+      border: '1px solid rgba(59,130,246,0.2)',
+    }}
+  >
+    <h4
+      style={{
+        margin: '0 0 8px 0',
+        color: '#2563eb',
+        fontSize: '14px',
+        fontWeight: '600',
+      }}
+    >
+      🤖 Recommended Products
+    </h4>
+
+    {recommendations.map((item) => (
+      <div
+        key={item}
+        style={{
+          padding: '4px 0',
+          fontSize: '13px',
+        }}
+      >
+        • {item}
+      </div>
+    ))}
+  </div>
+)}
 
             {/* Aisle location info cards */}
             <div className="location-info-grid">
