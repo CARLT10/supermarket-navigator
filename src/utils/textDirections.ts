@@ -69,7 +69,10 @@ export function generateDirections(path: GraphNode[], destinationName: string): 
       }
     }
 
-    const readableDistance = Math.round(distance);
+    const readableDistance = Math.max(
+  1,
+  Math.round(distance)
+);
     let stepText = '';
 
     if (turn === 'left') {
@@ -89,7 +92,7 @@ export function generateDirections(path: GraphNode[], destinationName: string): 
 
   // Step 3: Arrival instruction
   instructions.push({
-    text: `${destinationName} is ahead.`,
+    text: `You have reached ${destinationName}.`,
     distance: 0,
     icon: 'arrival',
   });

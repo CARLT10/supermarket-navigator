@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Navigation, 
-  Map, 
-  ShoppingCart, 
-  MapPin, 
-  Play, 
-  Pause, 
-  Square, 
+import {
+  Navigation,
+  Map,
+  ShoppingCart,
+  MapPin,
+  Square,
   ChevronUp, 
   ChevronDown, 
   RotateCcw,
@@ -29,11 +27,7 @@ interface BottomSheetProps {
   onStartNavigation: () => void;
   onStopNavigation: () => void;
   
-  // Simulation States
-  isSimulating: boolean;
-  onStartSimulation: () => void;
-  onPauseSimulation: () => void;
-  currentSimIndex: number;
+ 
   
   // Cart/List States
   cart: Product[];
@@ -54,10 +48,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   instructions,
   isNavigating,
   onStartNavigation,
-  onStopNavigation,
-  isSimulating,
-  onStartSimulation,
-  onPauseSimulation,
+  onStopNavigation, 
   currentSimIndex,
   cart,
   onToggleCart,
@@ -130,26 +121,29 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
               </div>
             </div>
 
-            {/* Simulation controls */}
-            <div className="nav-controls-row">
-              {!isSimulating ? (
-                <button className="nav-btn simulate-btn" onClick={onStartSimulation}>
-                  <Play size={16} fill="currentColor" />
-                  <span>Start Walk Sim</span>
-                </button>
-              ) : (
-                <button className="nav-btn pause-btn" onClick={onPauseSimulation}>
-                  <Pause size={16} fill="currentColor" />
-                  <span>Pause Walk</span>
-                </button>
-              )}
-              
-              <button className="nav-btn stop-btn" onClick={onStopNavigation}>
-                <Square size={16} fill="currentColor" />
-                <span>Exit Route</span>
-              </button>
-            </div>
+            {/* Real Walking Navigation Controls */}
+<div className="nav-controls-row">
+  <button className="nav-btn stop-btn" onClick={onStopNavigation}>
+    <Square size={16} fill="currentColor" />
+    <span>Stop Navigation</span>
+  </button>
+</div>
 
+<div
+  style={{
+    marginTop: '10px',
+    padding: '10px',
+    borderRadius: '10px',
+    background: 'rgba(16,185,129,0.1)',
+    border: '1px solid rgba(16,185,129,0.25)',
+    fontSize: '13px',
+    textAlign: 'center'
+  }}
+>
+  🚶 Walk physically with your phone.
+  <br />
+  Your position will update from the compass and step sensor.
+</div>
             {/* Turn-by-Turn list (visible when expanded) */}
             {isExpanded && (
               <div className="expanded-directions-list">

@@ -72,6 +72,10 @@ export const UserMarker: React.FC<UserMarkerProps> = ({ position, isWalking = fa
         <ringGeometry args={[0.22, 0.32, 32]} />
         <meshBasicMaterial color="#38bdf8" transparent opacity={0.4} side={2} />
       </mesh>
+      <mesh position={[0, 0.15, 0.18]}>
+  <coneGeometry args={[0.05, 0.15, 12]} />
+  <meshStandardMaterial color="#ef4444" />
+</mesh>
 
       {/* Solid Small Inner Dot */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]}>

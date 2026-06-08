@@ -527,9 +527,6 @@ export const App: React.FC = () => {
             isNavigating={isNavigating}
             onStartNavigation={handleStartNavigation}
             onStopNavigation={handleStopNavigation}
-            isSimulating={isSimulating}
-            onStartSimulation={startWalkSimulation}
-            onPauseSimulation={pauseWalkSimulation}
             currentSimIndex={currentSimIndex}
             cart={cart}
             onToggleCart={handleToggleCart}

@@ -103,3 +103,24 @@ export function getDistance(nodeA: GraphNode, nodeB: GraphNode): number {
   const dz = nodeA.z - nodeB.z;
   return Math.sqrt(dx * dx + dz * dz);
 }
+export function getNearestNode(
+  x: number,
+  z: number
+): GraphNode {
+  let nearest = GRAPH_NODES.entrance;
+  let minDistance = Infinity;
+
+  Object.values(GRAPH_NODES).forEach((node) => {
+    const dist = Math.sqrt(
+      (node.x - x) ** 2 +
+      (node.z - z) ** 2
+    );
+
+    if (dist < minDistance) {
+      minDistance = dist;
+      nearest = node;
+    }
+  });
+
+  return nearest;
+}
