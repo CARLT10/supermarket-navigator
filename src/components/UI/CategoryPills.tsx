@@ -1,0 +1,1 @@
+"// Cleaned up: Category selection is now integrated directly into the SearchBar dropdown\nexport {};\n"
