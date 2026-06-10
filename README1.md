@@ -757,7 +757,7 @@ Long-term integration with autonomous retail technologies including smart carts,
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Layer | Technology | Purpose |
 |---|---|---|
@@ -773,7 +773,7 @@ Long-term integration with autonomous retail technologies including smart carts,
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 supermarket-navigator/
@@ -821,7 +821,7 @@ supermarket-navigator/
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### Prerequisites
 
