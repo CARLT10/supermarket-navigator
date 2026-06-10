@@ -19,6 +19,9 @@ export const Rack3D: React.FC<Rack3DProps> = ({
 }) => {
   const shelfYPositions = [0.1, 0.5, 0.9, 1.3, 1.7];
 
+  // Filter products assigned to this rack
+  const rackProducts = products.filter((p) => p.rackId === rack.id);
+
   // Grid wires counts for backing mesh
   const verticalWiresCount = 7;
   const horizontalWiresCount = 13;
@@ -129,7 +132,7 @@ export const Rack3D: React.FC<Rack3DProps> = ({
 
             {/* Products on this shelf (covers both front and back placement automatically) */}
             <ProductPlaceholder
-              products={products}
+              products={rackProducts}
               shelfLevel={index + 1}
               shelfY={shelfY + 0.008}
               rackWidth={rack.width - 0.08}
@@ -158,12 +161,44 @@ export const Rack3D: React.FC<Rack3DProps> = ({
           <meshStandardMaterial color="#cbd5e1" roughness={0.3} metalness={0.5} />
         </mesh>
 
-        {/* Billboard text using drei Html */}
+        {/* Billboard text using drei Html (Front Side) */}
         <Html 
           transform 
           occlude
           distanceFactor={3.5}
           position={[0, 0, 0.012]}
+          style={{
+            userSelect: 'none',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            style={{
+              background: '#be123c',
+              color: '#ffffff',
+              fontFamily: '"Outfit", sans-serif',
+              fontWeight: 800,
+              fontSize: '11px',
+              padding: '2px 8px',
+              borderRadius: '2px',
+              whiteSpace: 'nowrap',
+              textAlign: 'center',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              boxShadow: '0 2px 4px rgb(0 0 0 / 0.15)',
+            }}
+          >
+            {rack.name}
+          </div>
+        </Html>
+
+        {/* Billboard text using drei Html (Back Side) */}
+        <Html 
+          transform 
+          occlude
+          distanceFactor={3.5}
+          position={[0, 0, -0.012]}
+          rotation={[0, Math.PI, 0]}
           style={{
             userSelect: 'none',
             pointerEvents: 'none',

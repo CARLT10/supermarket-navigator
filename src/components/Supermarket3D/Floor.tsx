@@ -53,7 +53,7 @@ export const Floor: React.FC = () => {
     <group>
       {/* Main Floor Plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
-        <planeGeometry args={[15, 12]} />
+        <planeGeometry args={[15, 15]} />
         <meshStandardMaterial 
           color="#f8fafc" 
           roughness={0.15} 
@@ -69,17 +69,17 @@ export const Floor: React.FC = () => {
 
       {/* Store boundary walls - 2.2m tall glass & metal frames */}
       {/* Back Wall */}
-      <Wall position={[0, 0, -6]} length={15} />
+      <Wall position={[0, 0, -7.5]} length={15} />
 
       {/* Front Wall with Entrance gap */}
-      <Wall position={[-4.5, 0, 6]} length={6} />
-      <Wall position={[4.5, 0, 6]} length={6} />
+      <Wall position={[-4.5, 0, 7.5]} length={6} />
+      <Wall position={[4.5, 0, 7.5]} length={6} />
 
       {/* Left Wall */}
-      <Wall position={[-7.5, 0, 0]} rotation={[0, Math.PI / 2, 0]} length={12} />
+      <Wall position={[-7.5, 0, 0]} rotation={[0, Math.PI / 2, 0]} length={15} />
 
       {/* Right Wall */}
-      <Wall position={[7.5, 0, 0]} rotation={[0, Math.PI / 2, 0]} length={12} />
+      <Wall position={[7.5, 0, 0]} rotation={[0, Math.PI / 2, 0]} length={15} />
     </group>
   );
 };

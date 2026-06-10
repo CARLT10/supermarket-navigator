@@ -28,14 +28,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const lastSelectedNameRef = useRef<string>('');
 
   // Sync with selected product from external components
   useEffect(() => {
     if (selectedProduct) {
       setQuery(selectedProduct.name);
+      lastSelectedNameRef.current = selectedProduct.name;
     } else {
-      setQuery('');
+      if (query === lastSelectedNameRef.current) {
+        setQuery('');
+      }
+      lastSelectedNameRef.current = '';
     }
   }, [selectedProduct]);
 
@@ -59,19 +67,46 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           (p.name.toLowerCase().includes(query.toLowerCase()) ||
            p.category.toLowerCase().includes(query.toLowerCase()))
       );
-      setSuggestions(filtered.slice(0, 6)); // cap at 6 for better dropdown listing
+      setSuggestions(filtered);
     } else if (activeCategoryName) {
       // Suggest items in active category when input is focused but empty
       const filtered = products.filter((p) => p.category === activeCategoryName);
-      setSuggestions(filtered.slice(0, 6));
+      setSuggestions(filtered);
     } else {
-      setSuggestions([]);
+      // Suggest default items when category is "All Categories" and input is focused but empty
+      setSuggestions(products);
     }
   }, [query, activeCategoryName, products]);
 
+  // Toggle scroll indicator when suggestions load or dropdown state changes
+  useEffect(() => {
+    if (isOpen && suggestions.length > 5) {
+      setShowScrollIndicator(true);
+    } else {
+      setShowScrollIndicator(false);
+    }
+  }, [isOpen, suggestions]);
+
+  const handleScroll = () => {
+    if (dropdownRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = dropdownRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 20;
+      if (isNearBottom && showScrollIndicator) {
+        setShowScrollIndicator(false);
+      } else if (!isNearBottom && !showScrollIndicator && suggestions.length > 5) {
+        setShowScrollIndicator(true);
+      }
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
+    const val = e.target.value;
+    setQuery(val);
     setIsOpen(true);
+    
+    if (selectedProduct && val !== selectedProduct.name) {
+      onClear();
+    }
   };
 
   const handleSelectSuggestion = (product: Product) => {
@@ -88,8 +123,45 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   return (
     <div className="search-bar-container" ref={containerRef}>
-      {/* Floating Input Panel */}
+      {/* Row 1: Main Search Input Box (takes full width) */}
       <div className="search-input-wrapper">
+        <Search className="search-icon" size={18} />
+        
+        <input
+          type="text"
+          placeholder="Search products..."
+          value={query}
+          onChange={handleInputChange}
+          onFocus={() => setIsOpen(true)}
+        />
+        
+        {query && (
+          <button className="clear-btn" onClick={handleClear} type="button">
+            <X size={16} />
+          </button>
+        )}
+
+        {/* Compass sync button on the right */}
+        {onSyncCompass && (
+          <>
+            <div className="search-divider" />
+            <button 
+              type="button"
+              className={`compass-sync-btn ${isCompassActive ? 'active' : ''}`} 
+              onClick={(e) => {
+                e.stopPropagation();
+                onSyncCompass();
+              }}
+              title="Sync Phone Compass"
+            >
+              <Compass size={16} className={isCompassActive ? 'spinning-compass' : ''} />
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Row 2: Category Selector + Location Indicator (stacked underneath) */}
+      <div className="search-meta-row">
         {/* Category Dropdown Selector */}
         <div className="category-select-wrapper">
           <select
@@ -122,75 +194,51 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           </select>
         </div>
 
-        <div className="search-divider" />
-        
-        <Search className="search-icon" size={18} />
-        
-        <input
-          type="text"
-          placeholder="Search items..."
-          value={query}
-          onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
-        />
-        
-        {query && (
-          <button className="clear-btn" onClick={handleClear}>
-            <X size={16} />
-          </button>
-        )}
-
-        <div className="search-divider" />
-        
         {/* GPS location pill indicator */}
         <div className="current-location-indicator">
           <MapPin size={14} className="pin-icon" />
           <span>{userNodeName === 'Supermarket Entrance' ? 'Entrance' : userNodeName.replace(' Shelf Access', '').replace(' Aisle', '')}</span>
         </div>
-
-        {/* Compass sync button */}
-        {onSyncCompass && (
-          <>
-            <div className="search-divider" />
-            <button 
-              type="button"
-              className={`compass-sync-btn ${isCompassActive ? 'active' : ''}`} 
-              onClick={(e) => {
-                e.stopPropagation();
-                onSyncCompass();
-              }}
-              title="Sync Phone Compass"
-            >
-              <Compass size={16} className={isCompassActive ? 'spinning-compass' : ''} />
-            </button>
-          </>
-        )}
       </div>
 
       {/* Auto suggestions dropdown list */}
       {isOpen && suggestions.length > 0 && (
-        <div className="search-suggestions-dropdown">
-          <div className="suggestions-header">
-            {activeCategoryName ? `${activeCategoryName} Products` : 'Suggested Products'}
-          </div>
-          {suggestions.map((p) => (
-            <div
-              key={p.id}
-              className="search-suggestion-item"
-              onClick={() => handleSelectSuggestion(p)}
-            >
-              <div 
-                className="suggestion-color-dot" 
-                style={{ backgroundColor: p.imageColor }} 
-              />
-              <div className="suggestion-details">
-                <div className="suggestion-name">{p.name}</div>
-                <div className="suggestion-category">
-                  {p.category} • Rack {p.rackId} • Shelf {p.shelf}
+        <div className="search-dropdown-wrapper">
+          <div 
+            ref={dropdownRef}
+            className="search-suggestions-dropdown"
+            onScroll={handleScroll}
+          >
+            <div className="suggestions-header">
+              {activeCategoryName ? `${activeCategoryName} Products` : 'Suggested Products'}
+            </div>
+            {suggestions.map((p) => (
+              <div
+                key={p.id}
+                className="search-suggestion-item"
+                onClick={() => handleSelectSuggestion(p)}
+              >
+                <div 
+                  className="suggestion-color-dot" 
+                  style={{ backgroundColor: p.imageColor }} 
+                />
+                <div className="suggestion-details">
+                  <div className="suggestion-name">{p.name}</div>
+                  <div className="suggestion-category">
+                    {p.category} • Rack {p.rackId} • Shelf {p.shelf}
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+          {showScrollIndicator && (
+            <div className="scroll-indicator-fade">
+              <div className="scroll-indicator-arrow">
+                <span>More items below</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="chevron-down-animated"><polyline points="6 9 12 15 18 9"></polyline></svg>
+              </div>
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>

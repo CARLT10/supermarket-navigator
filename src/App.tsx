@@ -10,6 +10,17 @@ import { SearchBar } from './components/UI/SearchBar';
 import { BottomSheet } from './components/UI/BottomSheet';
 import { ShellView } from './components/UI/ShellView';
 
+// Helper to determine whether a product is placed on the front or back of the shelf,
+// and return its correct access node ID in the graph.
+const getProductTargetNodeId = (product: Product): string => {
+  const shelfProducts = PRODUCTS.filter(
+    (p) => p.rackId === product.rackId && p.shelf === product.shelf
+  );
+  const idx = shelfProducts.findIndex((p) => p.id === product.id);
+  const isBack = idx % 2 === 1;
+  return `rack_${product.rackId}_${isBack ? 'rear' : 'front'}`;
+};
+
 export const App: React.FC = () => {
   // 1. Core Selected States
   const [selectedProduct, setSelectedProduct] = useState<Product | undefined>(undefined);
@@ -23,6 +34,8 @@ export const App: React.FC = () => {
 
   // 3. Navigation Route States
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isAlreadyThere, setIsAlreadyThere] = useState(false);
+  const [alreadyThereName, setAlreadyThereName] = useState('');
   const [routePath, setRoutePath] = useState<GraphNode[]>([]);
   const [routeDistance, setRouteDistance] = useState(0);
   const [instructions, setInstructions] = useState<NavigationInstruction[]>([]);
@@ -36,93 +49,11 @@ export const App: React.FC = () => {
     currentPos: { x: ENTRANCE.x, z: ENTRANCE.z }
   });
 
-  // 5. Compass Orientation & Pedometer States
+  // 5. Compass Orientation States
   const [compassHeading, setCompassHeading] = useState<number | null>(null);
   const [isCompassActive, setIsCompassActive] = useState(false);
-  const [stepCount, setStepCount] = useState(0);
-  const lastStepTime = useRef<number>(0);
 
-  // Sync state reference to avoid stale closures in browser event callbacks
-  const stateRef = useRef({
-    userPosition,
-    isNavigating,
-    routePath,
-    compassHeading,
-    selectedProduct,
-    isSimulating,
-  });
-
-  useEffect(() => {
-    stateRef.current = {
-      userPosition,
-      isNavigating,
-      routePath,
-      compassHeading,
-      selectedProduct,
-      isSimulating,
-    };
-  }, [userPosition, isNavigating, routePath, compassHeading, selectedProduct, isSimulating]);
-
-  // Handle a step detected by phone accelerometer sensor
-  const handlePhysicalStep = () => {
-    const { userPosition: currentPos, isNavigating: nav, routePath: path, compassHeading: heading, isSimulating: sim } = stateRef.current;
-    
-    // Ignore physical steps if walking simulation is already moving the character automatically
-    if (sim) return;
-
-    const stepLength = 0.55; // stride length in meters
-
-    if (nav && path.length >= 2) {
-      // 1. NAVIGATION MODE: Move avatar along the planned route line
-      const targetNode = path[1];
-      if (!targetNode) return;
-
-      const dx = targetNode.x - currentPos.x;
-      const dz = targetNode.z - currentPos.z;
-      const distToTarget = Math.sqrt(dx * dx + dz * dz);
-
-      if (distToTarget <= stepLength) {
-        // Arrive at next route node!
-        setUserPosition({ x: targetNode.x, z: targetNode.z });
-        setCurrentUserNode(targetNode);
-      } else {
-        // Move towards target node along the route segment
-        const angle = Math.atan2(dz, dx);
-        setUserPosition({
-          x: currentPos.x + Math.cos(angle) * stepLength,
-          z: currentPos.z + Math.sin(angle) * stepLength,
-        });
-      }
-    } else {
-      // 2. FREE ROAM MODE: Walk in the direction the phone is physically pointing
-      // If compass is synced, walk matching heading. Standard R3F camera North is Z-
-      const walkAngle = heading !== null ? heading : -Math.PI / 2;
-
-      // Note: in three.js scene, camera forward vector points towards negative Z
-      // When alpha = 0 (pointing North), character walks in negative Z direction
-      const moveX = Math.sin(walkAngle) * stepLength;
-      const moveZ = -Math.cos(walkAngle) * stepLength; // Z- is forward
-
-      const newX = Math.max(-7.0, Math.min(7.0, currentPos.x + moveX));
-      const newZ = Math.max(-5.5, Math.min(5.5, currentPos.z + moveZ));
-
-      setUserPosition({ x: newX, z: newZ });
-
-      // Find and snap to nearest graph node to keep userNode state updated
-      let nearestNode = GRAPH_NODES.entrance;
-      let minDist = Infinity;
-      Object.values(GRAPH_NODES).forEach((node) => {
-        const dist = Math.sqrt((newX - node.x) ** 2 + (newZ - node.z) ** 2);
-        if (dist < minDist) {
-          minDist = dist;
-          nearestNode = node;
-        }
-      });
-      setCurrentUserNode(nearestNode);
-    }
-  };
-
-  // Compass and Accelerometer Motion orientation listener
+  // Compass orientation listener
   useEffect(() => {
     if (!isCompassActive) {
       setCompassHeading(null);
@@ -130,51 +61,15 @@ export const App: React.FC = () => {
     }
 
     const handleOrientation = (e: DeviceOrientationEvent) => {
-      // iOS webkitCompassHeading check (provides absolute magnetic compass heading, 0-360 deg)
-      let heading = (e as any).webkitCompassHeading;
-      
-      // Fallback to standard alpha (absolute if using deviceorientationabsolute)
-      if (heading === undefined || heading === null) {
-        heading = e.alpha;
-      }
-
-      if (heading !== null && heading !== undefined) {
-        const headingRad = (heading * Math.PI) / 180;
+      if (e.alpha !== null) {
+        // e.alpha represents rotation around z-axis in degrees
+        const headingRad = (e.alpha * Math.PI) / 180;
         setCompassHeading(headingRad);
       }
     };
 
-    const handleMotion = (e: DeviceMotionEvent) => {
-      const acc = e.accelerationIncludingGravity;
-      if (!acc) return;
-      
-      const x = acc.x || 0;
-      const y = acc.y || 0;
-      const z = acc.z || 0;
-      
-      // Magnitude of force vector
-      const magnitude = Math.sqrt(x*x + y*y + z*z);
-      
-      const now = Date.now();
-      const threshold = 12.2; // step impact threshold in m/s^2 (gravity is ~9.8)
-      
-      if (magnitude > threshold && now - lastStepTime.current > 450) {
-        lastStepTime.current = now;
-        setStepCount((prev) => prev + 1);
-        handlePhysicalStep();
-      }
-    };
-
-    // Listen to standard and absolute orientation events plus accelerometer motion
     window.addEventListener('deviceorientation', handleOrientation);
-    window.addEventListener('deviceorientationabsolute', handleOrientation);
-    window.addEventListener('devicemotion', handleMotion);
-
-    return () => {
-      window.removeEventListener('deviceorientation', handleOrientation);
-      window.removeEventListener('deviceorientationabsolute', handleOrientation);
-      window.removeEventListener('devicemotion', handleMotion);
-    };
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [isCompassActive]);
 
   const handleSyncCompass = async () => {
@@ -182,16 +77,6 @@ export const App: React.FC = () => {
       setIsCompassActive(false);
       setCompassHeading(null);
       return;
-    }
-
-    // Check if running on a secure origin (required by mobile browsers to access sensors)
-    const isSecureOrigin = typeof window !== 'undefined' && 
-      (window.location.protocol === 'https:' || 
-       window.location.hostname === 'localhost' || 
-       window.location.hostname === '127.0.0.1');
-
-    if (!isSecureOrigin) {
-      alert("Mobile web browsers restrict sensor access to secure (HTTPS) origins.\n\nPlease open the app via an HTTPS tunnel (e.g. npx ngrok http 5173) or enable insecure flags in your mobile browser.");
     }
 
     if (
@@ -207,7 +92,6 @@ export const App: React.FC = () => {
         }
       } catch (err) {
         console.error('Compass sensor permission error:', err);
-        alert('Could not start compass sensor. Ensure you are accessing via HTTPS.');
       }
     } else {
       setIsCompassActive(true);
@@ -275,10 +159,18 @@ export const App: React.FC = () => {
     return nearestNodeId;
   };
 
-  // Multi-destination routing: Product is inside a rack which has multiple access nodes.
-  // We compute the shortest path to either of the access nodes and select the best.
   const handleCalculateRoute = (targetNodeId: string, targetName: string) => {
     const startNodeId = getNearestNodeToUser();
+    
+    if (startNodeId === targetNodeId) {
+      setIsAlreadyThere(true);
+      setAlreadyThereName(targetName);
+      setIsNavigating(false);
+      return;
+    }
+    setIsAlreadyThere(false);
+    setAlreadyThereName('');
+
     const result = findShortestPath(startNodeId, targetNodeId);
 
     if (result.path.length > 0) {
@@ -291,25 +183,23 @@ export const App: React.FC = () => {
     }
   };
 
-  // Start navigation for selected product
   const handleStartNavigation = () => {
     if (!selectedProduct) return;
 
-    // Find the product's rack access points in graph
-    const frontAccessNodeId = `rack_${selectedProduct.rackId}_front`;
-    const rearAccessNodeId = `rack_${selectedProduct.rackId}_rear`;
-
     const startNodeId = getNearestNodeToUser();
+    const targetNodeId = getProductTargetNodeId(selectedProduct);
 
-    // Compute path to both front and rear access points
-    const frontRoute = findShortestPath(startNodeId, frontAccessNodeId);
-    const rearRoute = findShortestPath(startNodeId, rearAccessNodeId);
-
-    // Pick the shorter path
-    let selectedRoute = frontRoute;
-    if (rearRoute.path.length > 0 && (frontRoute.path.length === 0 || rearRoute.distance < frontRoute.distance)) {
-      selectedRoute = rearRoute;
+    if (startNodeId === targetNodeId) {
+      setIsAlreadyThere(true);
+      setAlreadyThereName(selectedProduct.name);
+      setIsNavigating(false);
+      return;
     }
+    setIsAlreadyThere(false);
+    setAlreadyThereName('');
+
+    // Compute path to the correct shelf access point (front or rear)
+    const selectedRoute = findShortestPath(startNodeId, targetNodeId);
 
     if (selectedRoute.path.length > 0) {
       setRoutePath(selectedRoute.path);
@@ -324,6 +214,8 @@ export const App: React.FC = () => {
   // Exit navigation
   const handleStopNavigation = () => {
     setIsNavigating(false);
+    setIsAlreadyThere(false);
+    setAlreadyThereName('');
     setIsSimulating(false);
     setRoutePath([]);
     setRouteDistance(0);
@@ -431,13 +323,20 @@ export const App: React.FC = () => {
 
   // Quick navigation destinations shortcut handler
   const handleQuickNavigateShortcut = (targetNodeId: string, label: string) => {
-    // Reset selection details
-    setSelectedProduct(undefined);
-    setFocusedRackId(null);
-    setActiveCategoryName(null);
-
-    // Calculate route
-    handleCalculateRoute(targetNodeId, label);
+    const product = PRODUCTS.find((p) => p.name === label);
+    if (product) {
+      setSelectedProduct(product);
+      setFocusedRackId(product.rackId);
+      setActiveCategoryName(product.category);
+      const correctTargetNodeId = getProductTargetNodeId(product);
+      handleCalculateRoute(correctTargetNodeId, product.name);
+    } else {
+      // Reset selection details
+      setSelectedProduct(undefined);
+      setFocusedRackId(null);
+      setActiveCategoryName(null);
+      handleCalculateRoute(targetNodeId, label);
+    }
   };
 
   // Focus rack in 3D (camera pans there)
@@ -454,17 +353,9 @@ export const App: React.FC = () => {
   // Dynamic Re-routing (Active Pathfinder)
   useEffect(() => {
     if (isNavigating && !isSimulating && selectedProduct) {
-      const frontAccessNodeId = `rack_${selectedProduct.rackId}_front`;
-      const rearAccessNodeId = `rack_${selectedProduct.rackId}_rear`;
       const startNodeId = currentUserNode.id;
-
-      const frontRoute = findShortestPath(startNodeId, frontAccessNodeId);
-      const rearRoute = findShortestPath(startNodeId, rearAccessNodeId);
-
-      let selectedRoute = frontRoute;
-      if (rearRoute.path.length > 0 && (frontRoute.path.length === 0 || rearRoute.distance < frontRoute.distance)) {
-        selectedRoute = rearRoute;
-      }
+      const targetNodeId = getProductTargetNodeId(selectedProduct);
+      const selectedRoute = findShortestPath(startNodeId, targetNodeId);
 
       if (selectedRoute.path.length > 0) {
         setRoutePath(selectedRoute.path);
@@ -525,6 +416,8 @@ export const App: React.FC = () => {
             routeDistance={routeDistance}
             instructions={instructions}
             isNavigating={isNavigating}
+            isAlreadyThere={isAlreadyThere}
+            alreadyThereName={alreadyThereName}
             onStartNavigation={handleStartNavigation}
             onStopNavigation={handleStopNavigation}
             isSimulating={isSimulating}
@@ -535,8 +428,6 @@ export const App: React.FC = () => {
             onToggleCart={handleToggleCart}
             onQuickNavigate={handleQuickNavigateShortcut}
             onFocusRack={handleFocusRackIn3D}
-            isCompassActive={isCompassActive}
-            stepCount={stepCount}
           />
         </div>
       </div>
