@@ -33,7 +33,7 @@
 
 ---
 
-## 📋 Table of Contents
+##  Table of Contents
 
 - [Executive Summary](#-executive-summary)
 - [Market Opportunity](#-market-opportunity)
