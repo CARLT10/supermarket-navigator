@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  plugins: [react()],
   server: {
+    host: '0.0.0.0',
     allowedHosts: [
-      'extent-comrade-roundness.ngrok-free.dev'
+      'raft-partridge-lustfully.ngrok-free.dev'
     ]
   }
 })
-
-import react from '@vitejs/plugin-react'
