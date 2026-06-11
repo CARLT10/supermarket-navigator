@@ -632,3 +632,72 @@
     border-radius: 16px;
   }
 }
+
+/* --- AI Product Card --- */
+.ai-product-card {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+  animation: fade-in 0.4s ease;
+}
+
+.ai-product-header {
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ai-grid-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-grid-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.ai-grid-icon {
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ai-grid-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-grid-info small {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ai-grid-info strong {
+  font-size: 13px;
+  color: #e2e8f0;
+}

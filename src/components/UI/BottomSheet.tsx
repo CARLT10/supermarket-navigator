@@ -11,15 +11,18 @@ import {
   ChevronDown, 
   RotateCcw,
   CheckCircle,
-  HelpCircle
+  HelpCircle,
+  Sparkles
 } from 'lucide-react';
-import { type Product } from '../../data/products';
+import { type Product, PRODUCTS } from '../../data/products';
+import { PRODUCT_RECOMMENDATIONS } from '../../data/recommendations';
 import { type NavigationInstruction } from '../../utils/textDirections';
 
 interface BottomSheetProps {
   // Global States
   selectedProduct?: Product;
   activeCategoryName: string | null;
+  onSelectProduct?: (product: Product) => void;
   onClearSelection: () => void;
   
   // Navigation States
@@ -49,6 +52,7 @@ interface BottomSheetProps {
 
 export const BottomSheet: React.FC<BottomSheetProps> = ({
   selectedProduct,
+  onSelectProduct,
   onClearSelection,
   routeDistance,
   instructions,
@@ -71,6 +75,24 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
   // Cart operations
   const isInCart = selectedProduct ? cart.some((p) => p.id === selectedProduct.id) : false;
+
+  // Fallback dynamic recommendations logic
+  const getRecommendations = () => {
+    if (!selectedProduct) return [];
+    
+    // 1. Check hardcoded exact matches
+    const staticRecs = PRODUCT_RECOMMENDATIONS[selectedProduct.name];
+    if (staticRecs && staticRecs.length > 0) return staticRecs;
+    
+    // 2. Dynamic fallback: pick up to 3 products from the same category
+    const sameCategory = PRODUCTS
+      .filter(p => p.category === selectedProduct.category && p.id !== selectedProduct.id)
+      .map(p => p.name);
+      
+    return sameCategory.slice(0, 3);
+  };
+
+  const recommendations = getRecommendations();
 
   // Directions mapping to icon
   const getDirectionIcon = (iconName: string) => {
@@ -191,6 +213,31 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
             </div>
 
             <p className="product-description">{selectedProduct.description}</p>
+
+            {/* AI Product Recommendations */}
+            {recommendations.length > 0 && (
+              <div className="ai-recommendations-card">
+                <div className="recommendations-header">
+                  <Sparkles size={16} className="sparkle-icon" />
+                  <h4>Frequently Bought Together</h4>
+                </div>
+                <div className="recommendations-list">
+                  {recommendations.map((item) => (
+                    <div 
+                      key={item} 
+                      className="recommendation-item" 
+                      onClick={() => {
+                        const p = PRODUCTS.find(prod => prod.name === item);
+                        if (p && onSelectProduct) onSelectProduct(p);
+                      }}
+                    >
+                      <span className="recommendation-bullet" />
+                      <span className="recommendation-text">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Aisle location info cards */}
             <div className="location-info-grid">

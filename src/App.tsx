@@ -522,6 +522,7 @@ export const App: React.FC = () => {
           <BottomSheet
             selectedProduct={selectedProduct}
             activeCategoryName={activeCategoryName}
+            onSelectProduct={handleSelectProduct}
             onClearSelection={handleClearSelection}
             routeDistance={routeDistance}
             instructions={instructions}

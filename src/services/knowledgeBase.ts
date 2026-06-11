@@ -225,34 +225,66 @@ export interface StoreInfoEntry {
 
 export const STORE_INFO: StoreInfoEntry[] = [
   {
+    keywords: ['store', 'about the store', 'store info', 'store details'],
+    response: 'Welcome to our Supermarket! We offer fresh produce, daily essentials, and a seamless smart shopping experience. We are open from 8:00 AM to 10:00 PM, seven days a week. Let me know if you need help finding anything!',
+  },
+  {
     keywords: ['close', 'time', 'open', 'hours', 'timing'],
-    response: '🕗 The store is open from 8:00 AM to 10:00 PM, seven days a week.',
+    response: 'The store is open from 8:00 AM to 10:00 PM, seven days a week.',
   },
   {
     keywords: ['customer service', 'help desk', 'information'],
-    response: '📋 Customer service is located right near the entrance on your left as you walk in.',
+    response: 'Customer service is located right near the entrance on your left as you walk in.',
   },
   {
-    keywords: ['billing', 'counter', 'pay', 'checkout', 'payment'],
-    response: '💳 The billing counters are located at the front of the store, near the exit.',
+    keywords: ['billing', 'counter', 'pay', 'checkout', 'payment', 'bill'],
+    response: 'The billing counters are located at the front of the store, near the exit.',
+  },
+  {
+    keywords: ['exit', 'door', 'leave', 'out'],
+    response: 'The main exit is located at the front of the store, just past the billing counters.',
+  },
+  {
+    keywords: ['cart', 'trolley', 'basket', 'bags'],
+    response: 'Shopping carts and baskets are available right at the entrance of the store.',
   },
   {
     keywords: ['restroom', 'toilet', 'washroom', 'bathroom'],
-    response: '🚻 The restrooms are located at the back of the store, past the Dairy section.',
+    response: 'The restrooms are located at the back of the store, past the Dairy section.',
   },
   {
     keywords: ['parking', 'car', 'park', 'vehicle'],
-    response: '🅿️ We have basement parking with over 200 spots. Take the elevator or stairs near the entrance.',
+    response: 'We have basement parking with over 200 spots. Take the elevator or stairs near the entrance.',
   },
   {
     keywords: ['return', 'exchange', 'refund', 'policy'],
-    response: '🔄 We accept returns within 7 days of purchase with a valid receipt. Head to customer service near the entrance for assistance.',
+    response: 'We accept returns within 7 days of purchase with a valid receipt. Head to customer service near the entrance for assistance.',
   },
   {
     keywords: ['membership', 'loyalty', 'member', 'card', 'reward'],
-    response: '🎫 You can sign up for our loyalty card at the customer service desk near the entrance. Members earn points on every purchase!',
+    response: 'You can sign up for our loyalty card at the customer service desk near the entrance. Members earn points on every purchase!',
+  },
+  {
+    keywords: ['delivery', 'shipping', 'online', 'app', 'deliver'],
+    response: 'We offer same-day delivery through our mobile app! Download it today to get your groceries delivered to your door.',
+  },
+  {
+    keywords: ['pay', 'credit', 'cash', 'card', 'apple pay', 'payment', 'method'],
+    response: 'We accept Cash, Credit/Debit cards, Apple Pay, and Google Pay at all billing counters.',
   },
 ];
+
+// ─── RECIPES ────────────────────────────────────────────────────────────────
+export const RECIPES: Record<string, string[]> = {
+  cake: ['Whole Milk', 'Organic Brown Eggs', 'Unsalted Butter', 'Chocolate Bar (Dark)', 'Strawberries'],
+  baking: ['Whole Milk', 'Organic Brown Eggs', 'Unsalted Butter', 'Chocolate Bar (Dark)'],
+  pizza: ['Roma Tomatoes', 'Cheddar Cheese Block', 'Bell Pepper Mix', 'Red Onions'],
+  salad: ['Spinach Bag', 'Cucumber', 'Carrots', 'Roma Tomatoes', 'Red Onions'],
+  sandwich: ['Whole Wheat Bread', 'Cheddar Cheese Block', 'Roma Tomatoes', 'Cucumber'],
+  guacamole: ['Red Onions', 'Roma Tomatoes', 'Tortilla Chips'],
+  smoothie: ['Bananas', 'Strawberries', 'Greek Yogurt (32oz)', 'Almond Milk (Unsweetened)'],
+  breakfast: ['Organic Brown Eggs', 'Sourdough Bread', 'Unsalted Butter', 'Organic Orange Juice'],
+};
 
 // ─── RACK INFO ──────────────────────────────────────────────────────────────
 export interface RackNavInfo {
