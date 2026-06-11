@@ -1,0 +1,17 @@
+README1.md
+src/App.tsx
+src/ai-assistant.css
+src/components/Supermarket3D/Floor.tsx
+src/components/Supermarket3D/ProductPlaceholder.tsx
+src/components/Supermarket3D/Rack3D.tsx
+src/components/Supermarket3D/UserMarker.tsx
+src/components/UI/AIAssistant.tsx
+src/components/UI/BottomSheet.tsx
+src/components/UI/SearchBar.tsx
+src/data/graph.ts
+src/data/layout.ts
+src/data/products.ts
+src/index.css
+src/services/aiService.ts
+src/services/knowledgeBase.ts
+vite.config.ts
