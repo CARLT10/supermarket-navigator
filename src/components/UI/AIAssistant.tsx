@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, X, Send, Mic, MicOff, Loader2, Sparkles } from 'lucide-react';
+import { Bot, X, Send, Mic, MicOff, Loader2, Sparkles, ShoppingCart, RefreshCcw, Heart, CheckCircle2, Tag, MapPin, Route, Store } from 'lucide-react';
 import { aiService } from '../../services/aiService';
 import { type Product } from '../../data/products';
 import '../../ai-assistant.css';
@@ -13,6 +13,12 @@ interface Message {
   similarProducts?: string[];
   healthierOptions?: string[];
   offers?: any[];
+  productCard?: {
+    name: string;
+    price: number;
+    location: string;
+    directions: string;
+  };
 }
 
 interface AIAssistantProps {
@@ -77,15 +83,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
         suggestions: response.suggestions,
         similarProducts: response.similarProducts,
         healthierOptions: (response as any).healthierOptions,
-        offers: response.offers
+        offers: response.offers,
+        productCard: (response as any).productCard
       };
       setMessages(prev => [...prev, aiMsg]);
       setIsThinking(false);
 
-      // Speak response if user used voice
-      if (isAudio) {
-        aiService.speak(response.text);
-      }
+      // Voice output disabled — speech recognition (mic input) still works.
+      // TTS only triggers via a dedicated speaker button (not auto-played).
 
       // Execute action
       if (response.action) {
@@ -113,73 +118,35 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       setIsListening(true);
       setInterimText('');
 
-      // Access speech recognition for interim results
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-
-        recognition.onresult = (event: any) => {
-          let interim = '';
-          let final = '';
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-              final = transcript;
-            } else {
-              interim = transcript;
-            }
-          }
-          if (interim) {
-            setInterimText(interim);
-          }
-          if (final) {
-            setInterimText('');
-            setIsListening(false);
-            handleSend(final, true);
-          }
-        };
-
-        recognition.onerror = (event: any) => {
-          console.error('STT Error:', event.error);
+      aiService.startListening(
+        (finalText) => {
+          setInterimText('');
+          setIsListening(false);
+          handleSend(finalText, true);
+        },
+        (errorMsg) => {
+          console.error('STT Error:', errorMsg);
           setIsListening(false);
           setInterimText('');
-          if (event.error !== 'aborted' && event.error !== 'no-speech') {
+          if (errorMsg !== 'aborted' && errorMsg !== 'no-speech') {
             setMessages(prev => [
               ...prev,
               {
                 id: Date.now().toString(),
                 sender: 'ai',
-                text: `Sorry, I couldn't hear that (${event.error}). Please try again.`
+                text: `Sorry, I couldn't hear that (${errorMsg}). Please try again.`
               }
             ]);
           }
-        };
-
-        recognition.onend = () => {
+        },
+        () => {
           setIsListening(false);
           setInterimText('');
-        };
-
-        try {
-          recognition.start();
-        } catch (e) {
-          setIsListening(false);
-          setInterimText('');
+        },
+        (interim) => {
+          setInterimText(interim);
         }
-      } else {
-        setIsListening(false);
-        setMessages(prev => [
-          ...prev,
-          {
-            id: Date.now().toString(),
-            sender: 'ai',
-            text: 'Speech recognition is not supported in this browser.'
-          }
-        ]);
-      }
+      );
     }
   };
 
@@ -217,13 +184,46 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             {messages.map((msg) => (
               <div key={msg.id} className={`ai-message-wrapper ${msg.sender}`}>
                 <div className={`ai-message-bubble ${msg.sender}`}>
-                  <div className="ai-message-text">{msg.text}</div>
+                  <div className="ai-message-text" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
                 </div>
 
-                {/* Frequently bought together */}
+                {/* Product Card */}
+                {msg.productCard && (
+                  <div className="ai-product-card">
+                    <div className="ai-product-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CheckCircle2 size={16} color="#4ade80" />
+                      <span>{msg.productCard.name}</span>
+                    </div>
+                    <div className="ai-product-grid">
+                      <div className="ai-grid-item">
+                        <span className="ai-grid-icon"><Tag size={16} /></span>
+                        <div className="ai-grid-info">
+                          <small>Price</small>
+                          <strong>₹{msg.productCard.price}</strong>
+                        </div>
+                      </div>
+                      <div className="ai-grid-item">
+                        <span className="ai-grid-icon"><MapPin size={16} /></span>
+                        <div className="ai-grid-info">
+                          <small>Location</small>
+                          <strong>{msg.productCard.location}</strong>
+                        </div>
+                      </div>
+                      <div className="ai-grid-item full-width">
+                        <span className="ai-grid-icon"><Route size={16} /></span>
+                        <div className="ai-grid-info">
+                          <small>Directions</small>
+                          <strong>{msg.productCard.directions}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Frequently bought together / Suggested Items */}
                 {msg.suggestions && msg.suggestions.length > 0 && (
                   <div className="ai-message-suggestions">
-                    <div className="suggestions-label">🛒 Frequently bought together:</div>
+                    <div className="suggestions-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><ShoppingCart size={14} /> Suggested Items:</div>
                     <div className="suggestions-chips">
                       {msg.suggestions.map((suggestion, idx) => (
                         <button
@@ -241,7 +241,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 {/* Similar Products */}
                 {msg.similarProducts && msg.similarProducts.length > 0 && (
                   <div className="ai-message-suggestions">
-                    <div className="suggestions-label">🔄 Similar Products:</div>
+                    <div className="suggestions-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><RefreshCcw size={14} /> Similar Products:</div>
                     <div className="suggestions-chips">
                       {msg.similarProducts.map((product, idx) => (
                         <button
@@ -259,7 +259,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                 {/* Healthier Alternatives */}
                 {msg.healthierOptions && msg.healthierOptions.length > 0 && (
                   <div className="ai-message-suggestions">
-                    <div className="suggestions-label">🥗 Healthier Alternatives:</div>
+                    <div className="suggestions-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Heart size={14} /> Healthier Alternatives:</div>
                     <div className="suggestions-chips">
                       {msg.healthierOptions.map((option, idx) => (
                         <button
@@ -365,25 +365,25 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
               className="quick-action-chip"
               onClick={() => handleSend("What offers do you have today?")}
             >
-              🏷️ Today's Offers
+              <Tag size={14} /> Today's Offers
             </button>
             <button
               className="quick-action-chip"
               onClick={() => handleSend("Help me shop on a budget")}
             >
-              🛒 Budget Shopping
+              <ShoppingCart size={14} /> Budget Shopping
             </button>
             <button
               className="quick-action-chip"
               onClick={() => handleSend("Show me healthy options")}
             >
-              🥗 Healthy Options
+              <Heart size={14} /> Healthy Options
             </button>
             <button
               className="quick-action-chip"
               onClick={() => handleSend("Tell me about the store")}
             >
-              📍 Store Info
+              <Store size={14} /> Store Info
             </button>
           </div>
         </div>
