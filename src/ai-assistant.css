@@ -622,14 +622,64 @@
 }
 
 /* --- Responsive --- */
-@media (max-width: 420px) {
+@media (max-width: 820px) {
+  .ai-fab {
+    bottom: 195px; /* Floats above the collapsed product detail sheet */
+    right: 16px;
+    width: 50px;
+    height: 50px;
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+  }
+
+  .ai-fab svg {
+    width: 24px;
+    height: 24px;
+  }
+
   .ai-chat-window {
-    width: calc(100vw - 16px);
-    right: 8px;
-    bottom: 8px;
-    height: calc(100vh - 16px);
-    max-height: calc(100vh - 16px);
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: 12px;
+    height: 360px;
+    max-height: 55vh;
     border-radius: 16px;
+  }
+
+  .ai-message-bubble {
+    font-size: 13px;
+    padding: 10px 14px;
+    line-height: 1.45;
+  }
+
+  .ai-chat-messages {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .ai-chat-input-area {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .ai-mic-btn, .ai-send-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .ai-text-input {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .ai-quick-actions {
+    padding: 6px 10px;
+  }
+
+  .quick-action-chip {
+    font-size: 10px;
+    padding: 4px 8px;
   }
 }
 

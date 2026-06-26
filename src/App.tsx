@@ -9,7 +9,7 @@ import { SupermarketScene } from './components/Supermarket3D/SupermarketScene';
 import { SearchBar } from './components/UI/SearchBar';
 import { BottomSheet } from './components/UI/BottomSheet';
 import { ShellView } from './components/UI/ShellView';
-
+import { AIAssistant } from './components/UI/AIAssistant';
 // Helper to determine whether a product is placed on the front or back of the shelf,
 // and return its correct access node ID in the graph.
 const getProductTargetNodeId = (product: Product): string => {
@@ -428,6 +428,20 @@ export const App: React.FC = () => {
             onToggleCart={handleToggleCart}
             onQuickNavigate={handleQuickNavigateShortcut}
             onFocusRack={handleFocusRackIn3D}
+          />
+
+          {/* Conversational AI Assistant Widget */}
+          <AIAssistant 
+            products={PRODUCTS}
+            onSelectProduct={handleSelectProduct}
+            onNavigateToCategory={(category) => {
+              // Find first rack matching category
+              const rack = RACKS.find(r => r.category.toLowerCase() === category.toLowerCase());
+              if (rack) {
+                handleSelectCategory(rack.id, category);
+              }
+            }}
+            onNavigateToNode={handleQuickNavigateShortcut}
           />
         </div>
       </div>
