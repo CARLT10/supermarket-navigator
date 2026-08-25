@@ -22,7 +22,7 @@ export const RACKS: Rack[] = [
     name: 'Fruits',
     category: 'Fruits',
     x: -3.5,
-    z: -4.0,
+    z: -5.0,
     width: 1.2,
     depth: 0.6,
     height: 2.0,
@@ -33,7 +33,7 @@ export const RACKS: Rack[] = [
     name: 'Vegetables',
     category: 'Vegetables',
     x: 3.5,
-    z: -4.0,
+    z: -5.0,
     width: 1.2,
     depth: 0.6,
     height: 2.0,
@@ -44,7 +44,7 @@ export const RACKS: Rack[] = [
     name: 'Dairy',
     category: 'Dairy',
     x: -3.5,
-    z: 0.0,
+    z: -1.0,
     width: 1.2,
     depth: 0.6,
     height: 2.0,
@@ -55,7 +55,7 @@ export const RACKS: Rack[] = [
     name: 'Bakery',
     category: 'Bakery',
     x: 3.5,
-    z: 0.0,
+    z: -1.0,
     width: 1.2,
     depth: 0.6,
     height: 2.0,
@@ -66,7 +66,7 @@ export const RACKS: Rack[] = [
     name: 'Snacks',
     category: 'Snacks',
     x: -3.5,
-    z: 4.0,
+    z: 3.0,
     width: 1.2,
     depth: 0.6,
     height: 2.0,
@@ -77,7 +77,7 @@ export const RACKS: Rack[] = [
     name: 'Beverages',
     category: 'Beverages',
     x: 3.5,
-    z: 4.0,
+    z: 3.0,
     width: 1.2,
     depth: 0.6,
     height: 2.0,
@@ -85,6 +85,6 @@ export const RACKS: Rack[] = [
   },
 ];
 
-export const ENTRANCE = { x: 0.0, z: 7.0 };
-export const BILLING_COUNTER = { x: -3.5, z: 6.4 };
-export const EXIT = { x: -5.0, z: 7.0 };
+export const ENTRANCE = { x: 0.0, z: 7.4 };
+export const BILLING_COUNTER = { x: -3.5, z: 7.0 };
+export const EXIT = { x: -5.0, z: 7.4 };

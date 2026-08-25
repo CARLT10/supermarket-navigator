@@ -340,7 +340,7 @@ button {
   display: flex;
   flex-direction: column;
   pointer-events: none; /* Let clicks pass through to Three.js canvas */
-  z-index: 20;
+  z-index: 900;
 }
 
 .hud-top-section {
@@ -1463,4 +1463,120 @@ button {
     padding-top: 14px;
     height: 38px;
   }
+}
+
+/* Compass button sync styling */
+.compass-sync-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-gray);
+  padding: 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.compass-sync-btn:hover {
+  color: var(--accent-blue);
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.compass-sync-btn.active {
+  color: var(--text-white);
+  background: var(--accent-blue-bg);
+  border-color: rgba(56, 189, 248, 0.5);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+
+/* Compass symbol rotation animation */
+.spinning-compass {
+  animation: compass-glow 2.5s infinite linear;
+}
+
+@keyframes compass-glow {
+  0% { transform: rotate(0deg); opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { transform: rotate(360deg); opacity: 0.8; }
+}
+
+/* Educational guidance banner */
+.guidance-banner {
+  display: flex;
+  gap: 8px;
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px dashed rgba(56, 189, 248, 0.2);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 18px;
+}
+
+.guidance-banner .info-icon {
+  color: var(--accent-blue);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.guidance-banner p {
+  font-size: 10.5px;
+  color: var(--text-gray);
+  line-height: 1.4;
+}
+
+/* Turn-by-Turn directions step cards */
+.directions-steps-scroller {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.direction-step-card {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-slate);
+  padding: 8px 10px;
+  border-radius: 10px;
+  gap: 10px;
+}
+
+.direction-step-card.completed {
+  opacity: 0.4;
+}
+
+.direction-step-card.current {
+  border-color: var(--accent-blue);
+  background: rgba(56, 189, 248, 0.05);
+}
+
+.direction-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.step-content {
+  flex: 1;
+}
+
+.step-text {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.step-dist {
+  font-size: 9px;
+  color: var(--text-gray);
+  margin-left: 4px;
+}
+
+.completed-icon {
+  color: var(--accent-green);
+  flex-shrink: 0;
 }

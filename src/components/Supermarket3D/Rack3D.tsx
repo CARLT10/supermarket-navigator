@@ -167,6 +167,7 @@ export const Rack3D: React.FC<Rack3DProps> = ({
           occlude
           distanceFactor={3.5}
           position={[0, 0, 0.012]}
+          zIndexRange={[10, 0]}
           style={{
             userSelect: 'none',
             pointerEvents: 'none',
@@ -199,6 +200,7 @@ export const Rack3D: React.FC<Rack3DProps> = ({
           distanceFactor={3.5}
           position={[0, 0, -0.012]}
           rotation={[0, Math.PI, 0]}
+          zIndexRange={[10, 0]}
           style={{
             userSelect: 'none',
             pointerEvents: 'none',

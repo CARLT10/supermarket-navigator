@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, X, Send, Mic, MicOff, Loader2, Sparkles, ShoppingCart, RefreshCcw, Heart, CheckCircle2, Tag, MapPin, Route, Store } from 'lucide-react';
+import { Bot, X, Send, Mic, MicOff, Loader2, Sparkles, ShoppingCart, RefreshCcw, CheckCircle2, Tag, MapPin, Route } from 'lucide-react';
 import { aiService } from '../../services/aiService';
 import { type Product } from '../../data/products';
 import '../../ai-assistant.css';
@@ -26,20 +26,24 @@ interface AIAssistantProps {
   onSelectProduct: (product: Product) => void;
   onNavigateToCategory: (category: string) => void;
   onNavigateToNode: (nodeId: string, nodeName: string) => void;
+  cart: Product[];
+  onToggleCart: (product: Product) => void;
 }
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({
   products,
   onSelectProduct,
   onNavigateToCategory,
-  onNavigateToNode
+  onNavigateToNode,
+  cart,
+  onToggleCart
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       sender: 'ai',
-      text: `Hi! 👋 I'm your Smart Shopping Assistant. I can help you find products, compare prices, discover offers, navigate the store, and shop within your budget. Try saying "Show me snacks under ₹300" or "What offers do you have today?"`
+      text: `Hi! 👋 I'm your Smart Shopping Assistant. I can help you find products, navigate the store, and discover offers. Try saying "Find milk" or "What offers do you have today?"`
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -181,98 +185,177 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
           {/* Messages Area */}
           <div className="ai-chat-messages">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`ai-message-wrapper ${msg.sender}`}>
-                <div className={`ai-message-bubble ${msg.sender}`}>
-                  <div className="ai-message-text" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
-                </div>
+            {messages.map((msg) => {
+              const matchedProduct = msg.productCard
+                ? products.find(p => p.name.toLowerCase() === msg.productCard!.name.toLowerCase())
+                : undefined;
+              const productInCart = matchedProduct ? cart.some(p => p.id === matchedProduct.id) : false;
 
-                {/* Product Card */}
-                {msg.productCard && (
-                  <div className="ai-product-card">
-                    <div className="ai-product-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <CheckCircle2 size={16} color="#4ade80" />
-                      <span>{msg.productCard.name}</span>
-                    </div>
-                    <div className="ai-product-grid">
-                      <div className="ai-grid-item">
-                        <span className="ai-grid-icon"><Tag size={16} /></span>
-                        <div className="ai-grid-info">
-                          <small>Price</small>
-                          <strong>₹{msg.productCard.price}</strong>
+              return (
+                <div key={msg.id} className={`ai-message-wrapper ${msg.sender}`}>
+                  <div className={`ai-message-bubble ${msg.sender}`}>
+                    <div className="ai-message-text" style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</div>
+                  </div>
+
+                  {/* Product Card */}
+                  {msg.productCard && (
+                    <div className="ai-product-card">
+                      <div className="ai-product-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <CheckCircle2 size={16} color="#4ade80" />
+                        <span>{msg.productCard.name}</span>
+                      </div>
+                      <div className="ai-product-grid">
+                        <div className="ai-grid-item">
+                          <span className="ai-grid-icon"><Tag size={16} /></span>
+                          <div className="ai-grid-info">
+                            <small>Price</small>
+                            <strong>₹{msg.productCard.price}</strong>
+                          </div>
+                        </div>
+                        <div className="ai-grid-item">
+                          <span className="ai-grid-icon"><MapPin size={16} /></span>
+                          <div className="ai-grid-info">
+                            <small>Location</small>
+                            <strong>{msg.productCard.location}</strong>
+                          </div>
+                        </div>
+                        <div className="ai-grid-item full-width">
+                          <span className="ai-grid-icon"><Route size={16} /></span>
+                          <div className="ai-grid-info">
+                            <small>Directions</small>
+                            <strong>{msg.productCard.directions}</strong>
+                          </div>
                         </div>
                       </div>
-                      <div className="ai-grid-item">
-                        <span className="ai-grid-icon"><MapPin size={16} /></span>
-                        <div className="ai-grid-info">
-                          <small>Location</small>
-                          <strong>{msg.productCard.location}</strong>
-                        </div>
+
+                      {matchedProduct && (
+                        <button
+                          className={`ai-card-cart-btn ${productInCart ? 'in-cart' : ''}`}
+                          onClick={() => onToggleCart(matchedProduct)}
+                          style={{
+                            marginTop: '12px',
+                            width: '100%',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            border: productInCart ? '1.5px solid rgba(34, 197, 94, 0.3)' : 'none',
+                            background: productInCart ? 'rgba(34, 197, 94, 0.15)' : '#38bdf8',
+                            color: productInCart ? '#4ade80' : '#0f172a',
+                            fontWeight: 700,
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
+                          <ShoppingCart size={14} />
+                          <span>{productInCart ? 'Remove from List' : 'Add to Shopping List'}</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Frequently bought together / Suggested Items */}
+                  {msg.suggestions && msg.suggestions.length > 0 && (
+                    <div className="ai-message-suggestions">
+                      <div className="suggestions-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><ShoppingCart size={14} /> Suggested Items:</div>
+                      <div className="suggestions-chips">
+                        {msg.suggestions.map((suggestion, idx) => {
+                          const itemProduct = products.find(p => p.name.toLowerCase() === suggestion.toLowerCase());
+                          const isItemInCart = itemProduct ? cart.some(p => p.id === itemProduct.id) : false;
+                          
+                          return (
+                            <div key={idx} className="chip-actions-wrapper" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: '8px', marginBottom: '8px' }}>
+                              <button
+                                className="suggestion-chip"
+                                onClick={() => handleSend(`Find ${suggestion}`)}
+                                style={{ marginRight: 0 }}
+                              >
+                                {suggestion}
+                              </button>
+                              {itemProduct && (
+                                <button
+                                  onClick={() => onToggleCart(itemProduct)}
+                                  style={{
+                                    background: isItemInCart ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                                    border: `1.5px solid ${isItemInCart ? '#22c55e' : 'rgba(255,255,255,0.15)'}`,
+                                    color: isItemInCart ? '#22c55e' : '#e2e8f0',
+                                    borderRadius: '20px',
+                                    width: '26px',
+                                    height: '26px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    marginLeft: '-6px',
+                                    transition: 'all 0.2s',
+                                    fontWeight: 'bold',
+                                  }}
+                                  title={isItemInCart ? "Remove from list" : "Add to list"}
+                                >
+                                  {isItemInCart ? '✓' : '+'}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                      <div className="ai-grid-item full-width">
-                        <span className="ai-grid-icon"><Route size={16} /></span>
-                        <div className="ai-grid-info">
-                          <small>Directions</small>
-                          <strong>{msg.productCard.directions}</strong>
-                        </div>
+                    </div>
+                  )}
+
+                  {/* Similar Products */}
+                  {msg.similarProducts && msg.similarProducts.length > 0 && (
+                    <div className="ai-message-suggestions">
+                      <div className="suggestions-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><RefreshCcw size={14} /> Similar Products:</div>
+                      <div className="suggestions-chips">
+                        {msg.similarProducts.map((product, idx) => {
+                          const itemProduct = products.find(p => p.name.toLowerCase() === product.toLowerCase());
+                          const isItemInCart = itemProduct ? cart.some(p => p.id === itemProduct.id) : false;
+                          
+                          return (
+                            <div key={`sim-${idx}`} className="chip-actions-wrapper" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginRight: '8px', marginBottom: '8px' }}>
+                              <button
+                                className="suggestion-chip"
+                                onClick={() => handleSend(`Find ${product}`)}
+                                style={{ marginRight: 0 }}
+                              >
+                                {product}
+                              </button>
+                              {itemProduct && (
+                                <button
+                                  onClick={() => onToggleCart(itemProduct)}
+                                  style={{
+                                    background: isItemInCart ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.08)',
+                                    border: `1.5px solid ${isItemInCart ? '#22c55e' : 'rgba(255,255,255,0.15)'}`,
+                                    color: isItemInCart ? '#22c55e' : '#e2e8f0',
+                                    borderRadius: '20px',
+                                    width: '26px',
+                                    height: '26px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    marginLeft: '-6px',
+                                    transition: 'all 0.2s',
+                                    fontWeight: 'bold',
+                                  }}
+                                  title={isItemInCart ? "Remove from list" : "Add to list"}
+                                >
+                                  {isItemInCart ? '✓' : '+'}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Frequently bought together / Suggested Items */}
-                {msg.suggestions && msg.suggestions.length > 0 && (
-                  <div className="ai-message-suggestions">
-                    <div className="suggestions-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><ShoppingCart size={14} /> Suggested Items:</div>
-                    <div className="suggestions-chips">
-                      {msg.suggestions.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          className="suggestion-chip"
-                          onClick={() => handleSend(`Find ${suggestion}`)}
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
-                {/* Similar Products */}
-                {msg.similarProducts && msg.similarProducts.length > 0 && (
-                  <div className="ai-message-suggestions">
-                    <div className="suggestions-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><RefreshCcw size={14} /> Similar Products:</div>
-                    <div className="suggestions-chips">
-                      {msg.similarProducts.map((product, idx) => (
-                        <button
-                          key={`sim-${idx}`}
-                          className="suggestion-chip"
-                          onClick={() => handleSend(`Find ${product}`)}
-                        >
-                          {product}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Healthier Alternatives */}
-                {msg.healthierOptions && msg.healthierOptions.length > 0 && (
-                  <div className="ai-message-suggestions">
-                    <div className="suggestions-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Heart size={14} /> Healthier Alternatives:</div>
-                    <div className="suggestions-chips">
-                      {msg.healthierOptions.map((option, idx) => (
-                        <button
-                          key={`health-${idx}`}
-                          className="suggestion-chip healthier"
-                          onClick={() => handleSend(`Find ${option}`)}
-                        >
-                          {option}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Offer Cards */}
                 {msg.offers && msg.offers.length > 0 && (
@@ -308,7 +391,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   </div>
                 )}
               </div>
-            ))}
+            );
+          })}
 
             {/* Thinking indicator */}
             {isThinking && (
@@ -359,33 +443,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             </button>
           </div>
 
-          {/* Quick Action Chips */}
-          <div className="ai-quick-actions">
-            <button
-              className="quick-action-chip"
-              onClick={() => handleSend("What offers do you have today?")}
-            >
-              <Tag size={14} /> Today's Offers
-            </button>
-            <button
-              className="quick-action-chip"
-              onClick={() => handleSend("Help me shop on a budget")}
-            >
-              <ShoppingCart size={14} /> Budget Shopping
-            </button>
-            <button
-              className="quick-action-chip"
-              onClick={() => handleSend("Show me healthy options")}
-            >
-              <Heart size={14} /> Healthy Options
-            </button>
-            <button
-              className="quick-action-chip"
-              onClick={() => handleSend("Tell me about the store")}
-            >
-              <Store size={14} /> Store Info
-            </button>
-          </div>
         </div>
       )}
     </>

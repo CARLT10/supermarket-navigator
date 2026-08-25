@@ -46,7 +46,6 @@ interface BottomSheetProps {
 export const BottomSheet: React.FC<BottomSheetProps> = ({
   selectedProduct,
   onClearSelection,
-  routeDistance,
   instructions,
   isNavigating,
   isAlreadyThere,
@@ -56,7 +55,6 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   isSimulating,
   onStartSimulation,
   onPauseSimulation,
-  currentSimIndex,
   cart,
   onToggleCart,
   onQuickNavigate,
@@ -74,12 +72,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
   // Cart operations
   const isInCart = selectedProduct ? cart.some((p) => p.id === selectedProduct.id) : false;
 
-
-
   const hasSelectedProduct = !!selectedProduct;
   const containerClasses = [
     'bottom-sheet-container',
-    isExpanded && !isAlreadyThere && !isNavigating && !hasSelectedProduct ? 'expanded' : '',
+    isExpanded && !isAlreadyThere ? 'expanded' : '',
     isAlreadyThere ? 'already-there-active' : '',
     isNavigating ? 'navigating-hud' : '',
     hasSelectedProduct ? 'product-detail-active' : '',
@@ -87,11 +83,18 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     showCartOnly ? 'cart-active' : '',
   ].filter(Boolean).join(' ');
 
+  const destinationName = selectedProduct?.name || 
+    (instructions.length > 0 ? instructions[instructions.length - 1].text.replace('You have reached ', '').replace(/\.$/, '') : 'Destination');
+
   return (
     <div className={containerClasses}>
       {/* 1. Expand Handle / Gesture Bar */}
-      <div className="bottom-sheet-header" onClick={() => !isAlreadyThere && !isNavigating && !selectedProduct && setIsExpanded(!isExpanded)}>
-        {!isAlreadyThere && !isNavigating && !selectedProduct && (
+      <div 
+        className="bottom-sheet-header" 
+        onClick={() => !isAlreadyThere && !isNavigating && setIsExpanded(!isExpanded)}
+        style={{ cursor: isNavigating ? 'default' : 'pointer' }}
+      >
+        {!isAlreadyThere && !isNavigating && (
           <div className="header-toggle-icon">
             {isExpanded ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
           </div>
@@ -116,29 +119,10 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
           <div className="navigation-state-panel">
             {/* Top primary instruction banner */}
             <div className="nav-primary-instruction">
-              <div className="nav-arrow-icon">
-                {instructions[currentSimIndex]?.icon === 'left' ? '⬅️' : 
-                 instructions[currentSimIndex]?.icon === 'right' ? '➡️' : 
-                 instructions[currentSimIndex]?.icon === 'arrival' ? '🎉' : '⬆️'}
-              </div>
+              <div className="nav-arrow-icon">🧭</div>
               <div className="nav-instruction-detail">
-                <h3>{instructions[currentSimIndex]?.text || 'Recalculating route...'}</h3>
-                {instructions[currentSimIndex + 1] && (
-                  <p>Next: {instructions[currentSimIndex + 1].text}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Distance & Time summary */}
-            <div className="nav-summary-row">
-              <div className="nav-metric">
-                <span className="metric-value">{routeDistance}m</span>
-                <span className="metric-label">Distance</span>
-              </div>
-              <div className="nav-metric-divider" />
-              <div className="nav-metric">
-                <span className="metric-value">{Math.round(routeDistance * 0.8)}s</span>
-                <span className="metric-label">Est. Walk Time</span>
+                <h3>Navigating to {destinationName}</h3>
+                <p>Follow the path shown on the map</p>
               </div>
             </div>
 

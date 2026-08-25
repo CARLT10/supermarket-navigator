@@ -38,6 +38,13 @@ const CameraController: React.FC<CameraControllerProps> = ({
   const prevFocusedRackId = useRef<string | null>(null);
   const prevIsNavigating = useRef<boolean>(false);
   const prevUserPosition = useRef({ x: 0, z: 0 });
+  const manualCameraOffset = useRef<number>(0);
+
+  useEffect(() => {
+    if (compassHeading === null) {
+      manualCameraOffset.current = 0;
+    }
+  }, [compassHeading]);
 
   useEffect(() => {
     let changed = false;
@@ -81,9 +88,20 @@ const CameraController: React.FC<CameraControllerProps> = ({
   }, [focusedRackId, userPosition, isNavigating]);
 
   useFrame(() => {
-    // If user is actively interacting, stop auto-rotation/transition
+    // If user is actively interacting, update the offset relative to compass heading
     if (isUserInteracting.current) {
       isTransitioning.current = false;
+      
+      if (compassHeading !== null && controlsRef.current) {
+        const target = controlsRef.current.target;
+        const dx = camera.position.x - target.x;
+        const dz = camera.position.z - target.z;
+        const currentAngle = Math.atan2(dx, dz);
+        
+        let diff = currentAngle - compassHeading;
+        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+        manualCameraOffset.current = diff;
+      }
       return;
     }
 
@@ -95,9 +113,9 @@ const CameraController: React.FC<CameraControllerProps> = ({
       const radius = Math.sqrt(dx * dx + dz * dz);
       const height = camera.position.y - target.y;
 
-      // Orbit camera position smoothly matching the device orientation angle
+      // Orbit camera position smoothly matching the device orientation angle plus manual offset
       const currentAngle = Math.atan2(dx, dz);
-      const targetAngle = compassHeading;
+      const targetAngle = compassHeading + manualCameraOffset.current;
       
       // Interpolate angle smoothly wrapping around circles
       let diff = targetAngle - currentAngle;
